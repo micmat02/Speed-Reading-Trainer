@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speed Reading Trainer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            transition: all 0.5s ease;
+        }
+
+        body.reading-mode {
+            background: #000000;
+            padding: 0;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            overflow: hidden;
+            transition: all 0.5s ease;
+        }
+
+        body.reading-mode .container {
+            background: transparent;
+            border-radius: 0;
+            box-shadow: none;
+            max-width: 100%;
+            height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.5s ease;
+        }
+
+        body.reading-mode .header {
+            display: none;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+            transition: all 0.5s ease;
+        }
+
+        body.reading-mode .content {
+            padding: 0;
+        }
+
+        .setup-section {
+            display: block;
+        }
+
+        .setup-section.hidden {
+            display: none;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .url-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            font-family: inherit;
+            transition: border-color 0.3s;
+            margin-bottom: 10px;
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-small {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            font-size: 0.95em;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-small:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+        }
+
+        .btn-small:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .file-upload {
+            border: 2px dashed #e0e0e0;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f9f9f9;
+        }
+
+        .file-upload:hover {
+            border-color: #667eea;
+            background: #f0f0ff;
+        }
+
+        .file-upload input {
+            display: none;
+        }
+
+        .file-upload-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .speed-control input[type="range"] {
+            flex: 1;
+            height: 8px;
+            border-radius: 5px;
+            background: #e0e0e0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .speed-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        .speed-control input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+
+        .speed-display {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #667eea;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .reading-section {
+            display: none;
+            min-height: 400px;
+            position: relative;
+        }
+
+        .reading-section.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            width: 100%;
+        }
+
+        .word-display {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 3.5em;
+            font-weight: 400;
+            text-align: center;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 1px;
+            user-select: none;
+            color: #ffffff;
+            position: relative;
+            width: 600px;
+        }
+
+        .word-container {
+            position: relative;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .word-display .letter {
+            display: inline-block;
+            position: relative;
+        }
+
+        .word-display .middle {
+            color: #ef4444;
+        }
+
+        .word-display .pivot-marker {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+        }
+
+        .speed-watermark {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 0.85em;
+            color: #404040;
+            opacity: 0.4;
+            user-select: none;
+        }
+
+        .reading-controls {
+            position: fixed;
+            bottom: 70px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+            opacity: 0.3;
+            transition: opacity 0.3s;
+        }
+
+        .reading-controls:hover {
+            opacity: 1;
+        }
+
+        .reading-control-btn {
+            background: #404040;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 0.9em;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Times New Roman', Times, serif;
+        }
+
+        .reading-control-btn:hover {
+            background: #606060;
+            opacity: 1;
+        }
+
+        .progress-slider {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            padding: 0 50px;
+            opacity: 0.3;
+            transition: opacity 0.3s;
+        }
+
+        .progress-slider:hover {
+            opacity: 1;
+        }
+
+        .progress-container {
+            position: relative;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .progress-times {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 0.75em;
+            color: #606060;
+        }
+
+        .progress-track {
+            position: relative;
+            width: 100%;
+            height: 2px;
+            background: #404040;
+            cursor: pointer;
+        }
+
+        .progress-ball {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 16px;
+            height: 16px;
+            background: #606060;
+            border-radius: 50%;
+            cursor: grab;
+            transition: transform 0.1s, background 0.2s;
+        }
+
+        .progress-ball:hover {
+            transform: translate(-50%, -50%) scale(1.3);
+            background: #808080;
+        }
+
+        .progress-ball:active {
+            cursor: grabbing;
+            transform: translate(-50%, -50%) scale(1.5);
+        }
+
+        .progress-slider.hidden {
+            display: none;
+        }
+
+        .voice-controls {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            display: flex;
+            gap: 10px;
+            opacity: 0.3;
+            transition: opacity 0.3s;
+        }
+
+        .voice-controls:hover {
+            opacity: 1;
+        }
+
+        .voice-btn {
+            background: #404040;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 0.9em;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Times New Roman', Times, serif;
+        }
+
+        .voice-btn:hover {
+            background: #606060;
+        }
+
+        .voice-btn.active {
+            background: #ef4444;
+        }
+
+        .fullscreen-btn {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: #404040;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 0.9em;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            opacity: 0.3;
+            font-family: 'Times New Roman', Times, serif;
+            display: none;
+        }
+
+        .reading-section.active .fullscreen-btn {
+            display: block;
+        }
+
+        .fullscreen-btn:hover {
+            background: #606060;
+            opacity: 1;
+        }
+
+        .controls {
+            display: none;
+        }
+
+        .progress-bar {
+            display: none;
+        }
+
+        .stats {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .word-display {
+                font-size: 3em;
+            }
+
+            .content {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚡ Speed Reading Trainer</h1>
+            <p>Train your brain to read faster</p>
+        </div>
+
+        <div class="content">
+            <!-- Setup Section -->
+            <div class="setup-section" id="setupSection">
+                <div class="input-group">
+                    <label for="textInput">Paste Your Text:</label>
+                    <textarea id="textInput" placeholder="Paste the text you want to practice speed reading with..."></textarea>
+                </div>
+
+                <div class="input-group">
+                    <label>Or Upload a Document:</label>
+                    <div class="file-upload" id="fileUpload">
+                        <div class="file-upload-icon">📄</div>
+                        <div>Click to upload .txt, .pdf, .doc, or .docx file</div>
+                        <input type="file" id="fileInput" accept=".txt,.pdf,.doc,.docx">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="urlInput">Or Enter a Website URL:</label>
+                    <input type="url" id="urlInput" placeholder="https://example.com/article" class="url-input">
+                    <button class="btn-small" id="fetchUrlBtn">Fetch Content</button>
+                </div>
+
+                <div class="input-group">
+                    <label>Reading Speed:</label>
+                    <div class="speed-control">
+                        <span>150 WPM</span>
+                        <input type="range" id="speedSlider" min="150" max="600" value="300" step="10">
+                        <span>600 WPM</span>
+                    </div>
+                    <div class="speed-display" id="speedDisplay">300 WPM</div>
+                </div>
+
+                <button class="btn" id="startBtn">Start Reading</button>
+            </div>
+
+            <!-- Reading Section -->
+            <div class="reading-section" id="readingSection">
+                <div class="voice-controls">
+                    <button class="voice-btn" id="voiceToggleBtn">🔊 Voice Off</button>
+                </div>
+                <button class="fullscreen-btn" id="fullscreenBtn">⛶ Fullscreen</button>
+                <div class="word-display" id="wordDisplay"></div>
+                <div class="reading-controls">
+                    <button class="reading-control-btn" id="pauseBtn">⏸ Pause</button>
+                    <button class="reading-control-btn" id="backToSetupBtn">← Back</button>
+                </div>
+                <div class="progress-slider" id="progressSlider">
+                    <div class="progress-container">
+                        <div class="progress-times">
+                            <span id="timeElapsed">0:00</span>
+                            <span id="timeTotal">0:00</span>
+                        </div>
+                        <div class="progress-track" id="progressTrack">
+                            <div class="progress-ball" id="progressBall"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="speed-watermark" id="speedWatermark">300 WPM</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        class SpeedReader {
+            constructor() {
+                this.words = [];
+                this.currentIndex = 0;
+                this.isPlaying = false;
+                this.speed = 300; // WPM
+                this.intervalId = null;
+
+                this.initElements();
+                this.attachEventListeners();
+            }
+
+            initElements() {
+                this.setupSection = document.getElementById('setupSection');
+                this.readingSection = document.getElementById('readingSection');
+                this.textInput = document.getElementById('textInput');
+                this.fileInput = document.getElementById('fileInput');
+                this.fileUpload = document.getElementById('fileUpload');
+                this.urlInput = document.getElementById('urlInput');
+                this.fetchUrlBtn = document.getElementById('fetchUrlBtn');
+                this.speedSlider = document.getElementById('speedSlider');
+                this.speedDisplay = document.getElementById('speedDisplay');
+                this.startBtn = document.getElementById('startBtn');
+                this.wordDisplay = document.getElementById('wordDisplay');
+                this.speedWatermark = document.getElementById('speedWatermark');
+                this.fullscreenBtn = document.getElementById('fullscreenBtn');
+                this.pauseBtn = document.getElementById('pauseBtn');
+                this.backToSetupBtn = document.getElementById('backToSetupBtn');
+                this.voiceToggleBtn = document.getElementById('voiceToggleBtn');
+                this.progressSlider = document.getElementById('progressSlider');
+                this.progressTrack = document.getElementById('progressTrack');
+                this.progressBall = document.getElementById('progressBall');
+                this.timeElapsed = document.getElementById('timeElapsed');
+                this.timeTotal = document.getElementById('timeTotal');
+                
+                // Voice synthesis
+                this.voiceEnabled = false;
+                this.synth = window.speechSynthesis;
+                this.currentUtterance = null;
+                
+                // Time tracking
+                this.startTime = null;
+                this.pausedTime = 0;
+            }
+
+            attachEventListeners() {
+                this.speedSlider.addEventListener('input', (e) => {
+                    this.speed = parseInt(e.target.value);
+                    this.speedDisplay.textContent = `${this.speed} WPM`;
+                });
+
+                this.fileUpload.addEventListener('click', () => {
+                    this.fileInput.click();
+                });
+
+                this.fileInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        this.handleFile(file);
+                    }
+                });
+
+                this.fetchUrlBtn.addEventListener('click', () => {
+                    this.fetchUrlContent();
+                });
+
+                this.startBtn.addEventListener('click', () => {
+                    this.startReading();
+                });
+
+                this.fullscreenBtn.addEventListener('click', () => {
+                    this.toggleFullscreen();
+                });
+
+                this.pauseBtn.addEventListener('click', () => {
+                    if (this.isPlaying) {
+                        this.pause();
+                        this.pauseBtn.textContent = '▶ Play';
+                    } else {
+                        this.play();
+                        this.pauseBtn.textContent = '⏸ Pause';
+                    }
+                });
+
+                this.backToSetupBtn.addEventListener('click', () => {
+                    this.backToSetup();
+                });
+
+                this.voiceToggleBtn.addEventListener('click', () => {
+                    this.toggleVoice();
+                });
+
+                // Progress slider interactions
+                let isDragging = false;
+                
+                this.progressBall.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    e.preventDefault();
+                });
+
+                document.addEventListener('mousemove', (e) => {
+                    if (isDragging && this.words.length > 0) {
+                        this.handleProgressDrag(e);
+                    }
+                });
+
+                document.addEventListener('mouseup', () => {
+                    isDragging = false;
+                });
+
+                this.progressTrack.addEventListener('click', (e) => {
+                    if (!isDragging && this.words.length > 0) {
+                        this.handleProgressClick(e);
+                    }
+                });
+
+                // Click anywhere on screen to pause/play
+                this.readingSection.addEventListener('click', (e) => {
+                    // Don't toggle if clicking on interactive elements
+                    if (e.target === this.progressBall || 
+                        e.target === this.progressTrack || 
+                        e.target === this.pauseBtn || 
+                        e.target === this.backToSetupBtn || 
+                        e.target === this.fullscreenBtn ||
+                        e.target === this.voiceToggleBtn) {
+                        return;
+                    }
+                    
+                    // Toggle play/pause
+                    if (this.isPlaying) {
+                        this.pause();
+                        this.pauseBtn.textContent = '▶ Play';
+                    } else {
+                        this.play();
+                        this.pauseBtn.textContent = '⏸ Pause';
+                    }
+                });
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (this.readingSection.classList.contains('active')) {
+                        if (e.code === 'Space') {
+                            e.preventDefault();
+                            if (this.isPlaying) {
+                                this.pause();
+                                this.pauseBtn.textContent = '▶ Play';
+                            } else {
+                                this.play();
+                                this.pauseBtn.textContent = '⏸ Pause';
+                            }
+                        } else if (e.code === 'Escape') {
+                            if (document.fullscreenElement) {
+                                document.exitFullscreen();
+                            } else {
+                                this.backToSetup();
+                            }
+                        } else if (e.code === 'KeyR') {
+                            this.restart();
+                        } else if (e.code === 'KeyF') {
+                            this.toggleFullscreen();
+                        } else if (e.code === 'KeyV') {
+                            this.toggleVoice();
+                        }
+                    }
+                });
+            }
+
+            async handleFile(file) {
+                const fileName = file.name.toLowerCase();
+                
+                try {
+                    if (fileName.endsWith('.txt')) {
+                        const text = await file.text();
+                        this.textInput.value = text;
+                    } else if (fileName.endsWith('.pdf')) {
+                        const text = await this.extractPdfText(file);
+                        this.textInput.value = text;
+                    } else if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
+                        const text = await this.extractDocxText(file);
+                        this.textInput.value = text;
+                    }
+                } catch (error) {
+                    alert('Error reading file: ' + error.message);
+                }
+            }
+
+            async extractPdfText(file) {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                let fullText = '';
+                
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += pageText + ' ';
+                }
+                
+                return fullText.trim();
+            }
+
+            async extractDocxText(file) {
+                const arrayBuffer = await file.arrayBuffer();
+                const result = await mammoth.extractRawText({ arrayBuffer });
+                return result.value;
+            }
+
+            async fetchUrlContent() {
+                const url = this.urlInput.value.trim();
+                if (!url) {
+                    alert('Please enter a URL');
+                    return;
+                }
+
+                this.fetchUrlBtn.disabled = true;
+                this.fetchUrlBtn.textContent = 'Fetching...';
+
+                try {
+                    // Note: This will be blocked by CORS for most websites
+                    // In a real application, you'd need a backend proxy
+                    const response = await fetch(url);
+                    const html = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    // Try to extract main content
+                    const article = doc.querySelector('article') || doc.querySelector('main') || doc.body;
+                    const text = article.innerText;
+                    
+                    this.textInput.value = text;
+                    alert('Content fetched successfully!');
+                } catch (error) {
+                    alert('Error fetching URL: ' + error.message + '\n\nNote: Most websites block direct fetching due to CORS policy. Try copying and pasting the text instead.');
+                } finally {
+                    this.fetchUrlBtn.disabled = false;
+                    this.fetchUrlBtn.textContent = 'Fetch Content';
+                }
+            }
+
+            startReading() {
+                const text = this.textInput.value.trim();
+                if (!text) {
+                    alert('Please paste some text, upload a file, or fetch content from a URL first!');
+                    return;
+                }
+
+                // Split text into words
+                this.words = text.split(/\s+/).filter(word => word.length > 0);
+                
+                if (this.words.length === 0) {
+                    alert('No valid words found in the text!');
+                    return;
+                }
+
+                this.currentIndex = 0;
+                this.speedWatermark.textContent = `${this.speed} WPM`;
+                
+                // Calculate and display total time
+                this.updateTotalTime();
+
+                // Switch to reading mode
+                document.body.classList.add('reading-mode');
+                this.setupSection.classList.add('hidden');
+                this.readingSection.classList.add('active');
+
+                // Start playing
+                this.play();
+            }
+
+            formatTime(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            }
+
+            updateTotalTime() {
+                // Calculate total time in seconds: (total words / WPM) * 60
+                const totalSeconds = (this.words.length / this.speed) * 60;
+                this.timeTotal.textContent = this.formatTime(totalSeconds);
+            }
+
+            updateElapsedTime() {
+                if (!this.startTime) return;
+                
+                const now = Date.now();
+                const elapsed = (now - this.startTime + this.pausedTime) / 1000;
+                this.timeElapsed.textContent = this.formatTime(elapsed);
+            }
+
+            play() {
+                if (this.currentIndex >= this.words.length) {
+                    this.currentIndex = 0;
+                }
+
+                this.isPlaying = true;
+                this.pauseBtn.textContent = '⏸ Pause';
+                
+                // Set start time if not already set
+                if (!this.startTime) {
+                    this.startTime = Date.now();
+                }
+                
+                // Calculate interval in milliseconds
+                const interval = 60000 / this.speed; // 60000 ms per minute / words per minute
+
+                this.displayWord();
+                
+                this.intervalId = setInterval(() => {
+                    this.currentIndex++;
+                    
+                    if (this.currentIndex >= this.words.length) {
+                        this.pause();
+                        this.pauseBtn.textContent = '▶ Play';
+                        this.currentIndex = 0;
+                        setTimeout(() => {
+                            this.backToSetup();
+                        }, 1000);
+                        return;
+                    }
+                    
+                    this.displayWord();
+                    this.updateElapsedTime();
+                }, interval);
+            }
+
+            pause() {
+                this.isPlaying = false;
+                
+                if (this.intervalId) {
+                    clearInterval(this.intervalId);
+                    this.intervalId = null;
+                }
+                
+                // Track paused time
+                if (this.startTime) {
+                    this.pausedTime = Date.now() - this.startTime;
+                }
+            }
+
+            restart() {
+                this.pause();
+                this.pauseBtn.textContent = '▶ Play';
+                this.currentIndex = 0;
+                this.startTime = null;
+                this.pausedTime = 0;
+                this.timeElapsed.textContent = '0:00';
+                this.displayWord();
+                this.play();
+            }
+
+            toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        alert(`Error attempting to enable fullscreen: ${err.message}`);
+                    });
+                    this.fullscreenBtn.textContent = '⛶ Exit Fullscreen';
+                } else {
+                    document.exitFullscreen();
+                    this.fullscreenBtn.textContent = '⛶ Fullscreen';
+                }
+            }
+
+            toggleVoice() {
+                this.voiceEnabled = !this.voiceEnabled;
+                
+                if (this.voiceEnabled) {
+                    this.voiceToggleBtn.textContent = '🔊 Voice On';
+                    this.voiceToggleBtn.classList.add('active');
+                } else {
+                    this.voiceToggleBtn.textContent = '🔊 Voice Off';
+                    this.voiceToggleBtn.classList.remove('active');
+                    // Cancel any ongoing speech
+                    if (this.synth.speaking) {
+                        this.synth.cancel();
+                    }
+                }
+            }
+
+            speakWord(word) {
+                if (!this.voiceEnabled) return;
+                
+                // Cancel any previous utterance
+                if (this.synth.speaking) {
+                    this.synth.cancel();
+                }
+                
+                // Clean the word of any special characters for better pronunciation
+                const cleanWord = word.replace(/[^\w\s]/g, '');
+                
+                this.currentUtterance = new SpeechSynthesisUtterance(cleanWord);
+                
+                // Set speech rate based on WPM ranges
+                let speechRate;
+                if (this.speed <= 200) {
+                    speechRate = 1.0;
+                } else if (this.speed <= 300) {
+                    speechRate = 1.2;
+                } else if (this.speed <= 450) {
+                    speechRate = 1.4;
+                } else {
+                    speechRate = 1.5;
+                }
+                
+                this.currentUtterance.rate = speechRate;
+                this.currentUtterance.pitch = 1.0;
+                this.currentUtterance.volume = 1.0;
+                
+                // For very fast speeds, make utterances slightly quieter
+                if (this.speed > 500) {
+                    this.currentUtterance.volume = 0.8;
+                }
+                
+                this.synth.speak(this.currentUtterance);
+            }
+
+            handleProgressDrag(e) {
+                const rect = this.progressTrack.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const percentage = Math.max(0, Math.min(1, x / rect.width));
+                const newIndex = Math.floor(percentage * this.words.length);
+                
+                this.updateProgress(newIndex);
+            }
+
+            handleProgressClick(e) {
+                const rect = this.progressTrack.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const percentage = Math.max(0, Math.min(1, x / rect.width));
+                const newIndex = Math.floor(percentage * this.words.length);
+                
+                const wasPlaying = this.isPlaying;
+                if (wasPlaying) {
+                    this.pause();
+                }
+                
+                this.updateProgress(newIndex);
+                
+                if (wasPlaying) {
+                    this.play();
+                }
+            }
+
+            updateProgress(index) {
+                if (index >= 0 && index < this.words.length) {
+                    this.currentIndex = index;
+                    this.displayWord();
+                    this.updateProgressBar();
+                }
+            }
+
+            updateProgressBar() {
+                const percentage = (this.currentIndex / Math.max(1, this.words.length - 1)) * 100;
+                this.progressBall.style.left = `${percentage}%`;
+            }
+
+            displayWord() {
+                const word = this.words[this.currentIndex];
+                const middleIndex = Math.floor(word.length / 2);
+                
+                // Speak the word if voice is enabled
+                this.speakWord(word);
+                
+                // Calculate offset to keep middle letter at center
+                let html = '<div class="word-container">';
+                
+                // Build word with letters
+                for (let i = 0; i < word.length; i++) {
+                    const className = i === middleIndex ? 'letter middle' : 'letter';
+                    html += `<span class="${className}">${word[i]}</span>`;
+                }
+                
+                html += '</div>';
+                
+                this.wordDisplay.innerHTML = html;
+                
+                // Position word so middle letter stays centered
+                const container = this.wordDisplay.querySelector('.word-container');
+                const letters = container.querySelectorAll('.letter');
+                const middleLetter = letters[middleIndex];
+                
+                // Calculate offset needed to center the middle letter
+                if (middleLetter) {
+                    const containerWidth = container.offsetWidth;
+                    const middleLetterOffset = middleLetter.offsetLeft + (middleLetter.offsetWidth / 2);
+                    const centerOffset = containerWidth / 2;
+                    const offset = centerOffset - middleLetterOffset;
+                    
+                    container.style.transform = `translateX(${offset}px)`;
+                }
+                
+                // Update progress bar
+                this.updateProgressBar();
+            }
+
+            backToSetup() {
+                this.pause();
+                this.pauseBtn.textContent = '⏸ Pause';
+                
+                // Reset time tracking
+                this.startTime = null;
+                this.pausedTime = 0;
+                this.timeElapsed.textContent = '0:00';
+                this.timeTotal.textContent = '0:00';
+                
+                // Stop voice synthesis
+                if (this.synth.speaking) {
+                    this.synth.cancel();
+                }
+                
+                // Exit fullscreen if active
+                if (document.fullscreenElement) {
+                    document.exitFullscreen();
+                }
+                
+                document.body.classList.remove('reading-mode');
+                this.readingSection.classList.remove('active');
+                this.setupSection.classList.remove('hidden');
+            }
+        }
+
+        // Initialize the app
+        const app = new SpeedReader();
+    </script>
+</body>
+</html>
